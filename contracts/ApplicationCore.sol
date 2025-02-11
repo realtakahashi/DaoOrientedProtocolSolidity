@@ -1,34 +1,97 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.28;
 
-// Uncomment this line to use console.log
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+
 // import "hardhat/console.sol";
 
-contract Lock {
-    uint public unlockTime;
-    address payable public owner;
+contract ApplicationCore is Ownable {
+    struct Application {
+        bool isPreinstalled;
+        string name;
+        string version;
+        address contractAddress;
+    }
 
-    event Withdrawal(uint amount, uint when);
+    uint256 public _applicationCount;
+    mapping(uint256 => Application) public _applications;
+    address private _memberManager;
+    address private _proposalManager;
+    address private _voteManager;
 
-    constructor(uint _unlockTime) payable {
-        require(
-            block.timestamp < _unlockTime,
-            "Unlock time should be in the future"
+    constructor(
+        address memberManager,
+        address proposalManager,
+        address voteManager
+    ) Ownable(msg.sender) {
+        _applicationCount = 0;
+        _applications[_applicationCount] = Application(
+            true,
+            "MemberManager",
+            "0.01",
+            memberManager
         );
-
-        unlockTime = _unlockTime;
-        owner = payable(msg.sender);
+        _applicationCount++;
+        _applications[_applicationCount] = Application(
+            true,
+            "ProposalManager",
+            "0.01",
+            proposalManager
+        );
+        _applicationCount++;
+        _applications[_applicationCount] = Application(
+            true,
+            "VoteManager",
+            "0.01",
+            voteManager
+        );
+        _applicationCount++;
     }
 
-    function withdraw() public {
-        // Uncomment this line, and the import of "hardhat/console.sol", to print a log in your terminal
-        // console.log("Unlock time is %o and block timestamp is %o", unlockTime, block.timestamp);
-
-        require(block.timestamp >= unlockTime, "You can't withdraw yet");
-        require(msg.sender == owner, "You aren't the owner");
-
-        emit Withdrawal(address(this).balance, block.timestamp);
-
-        owner.transfer(address(this).balance);
+    function installApplication(
+        string memory name,
+        string memory version,
+        address contractAddress
+    ) public onlyProposalManager {
+        //todo: check having application interface
+        _applications[_applicationCount] = Application(
+            true,
+            name,
+            version,
+            contractAddress
+        );
+        _applicationCount++;
     }
+
+    function updateMemberManager(address memberManager) public onlyProposalManager {
+        //todo: check having application interface
+        _memberManager = memberManager;
+    }
+
+    function updateProposalManager(address proposalManager) public onlyProposalManager {
+        //todo: check having application interface
+        _proposalManager = proposalManager;
+    }
+
+    function updateVoteManager(address voteManager) public onlyProposalManager {
+        //todo: check having application interface
+        _voteManager = voteManager;
+    }
+
+    function deleteApplication(uint256 index) public onlyProposalManager {
+        require(
+            index < _applicationCount,
+            "Index is out of range of applications"
+        );
+        delete _applications[index];
+    }
+
+    modifier onlyProposalManager() {
+        require(
+            msg.sender == _proposalManager,
+            "Only ProposalManager can call this function"
+        );
+        _;
+    }
+
 }

@@ -37,5 +37,6 @@ describe("ApplicationCore", function () {
       expect((await applicationCore._applications(2)).contractAddress).to.equal("0x8cE3a03265F89B103286746c8479e194306ee3De");
     });
   });
+  //todo: Other tests shoould be added when the proposal manager are implemented.
 
 });

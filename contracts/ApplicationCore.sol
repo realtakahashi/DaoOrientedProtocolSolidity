@@ -2,10 +2,12 @@
 pragma solidity ^0.8.28;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IApplicationCore} from "./IApplicationCore.sol";
+import {OwnableProposalManager} from "./OwnableProposalManager.sol";
 
 // import "hardhat/console.sol";
 
-contract ApplicationCore is Ownable {
+contract ApplicationCore is Ownable, IApplicationCore, OwnableProposalManager {
     struct Application {
         bool isPreinstalled;
         string name;
@@ -46,6 +48,8 @@ contract ApplicationCore is Ownable {
             voteManager
         );
         _applicationCount++;
+
+        _setProposalManager(proposalManager);
     }
 
     function installApplication(
@@ -86,12 +90,16 @@ contract ApplicationCore is Ownable {
         delete _applications[index];
     }
 
-    modifier onlyProposalManager() {
-        require(
-            msg.sender == _proposalManager,
-            "Only ProposalManager can call this function"
-        );
-        _;
+    function isInstalledApplication(address applicationAdress)
+        public
+        view
+        returns (bool)
+    {
+        for (uint256 i = 0; i < _applicationCount; i++) {
+            if (_applications[i].contractAddress == applicationAdress) {
+                return true;
+            }
+        }
+        return false;
     }
-
 }

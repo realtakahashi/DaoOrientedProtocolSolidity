@@ -3,12 +3,12 @@ pragma solidity ^0.8.28;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ApplicationBase} from "./ApplicationBase.sol";
-import {IApplication} from "./IApplication.sol";
 import {OwnableProposalManager} from "./OwnableProposalManager.sol";
+import {IMemberManager} from "./IMemberManager.sol";
 
 // import "hardhat/console.sol";
 
-contract MemberManager is Ownable, ApplicationBase, IApplication, OwnableProposalManager {
+contract MemberManager is Ownable, ApplicationBase, OwnableProposalManager, IMemberManager {
     struct Member {
         string name;
         address eoaAddress;
@@ -34,7 +34,7 @@ contract MemberManager is Ownable, ApplicationBase, IApplication, OwnableProposa
         _addInterface("resetElectionCommissioner");
     }
 
-    function setProposalManager(address proposalManager) public onlyOwner {
+    function setProposalManager(address proposalManager) external onlyOwner {
         _setProposalManager(proposalManager);
     }
 
@@ -69,6 +69,34 @@ contract MemberManager is Ownable, ApplicationBase, IApplication, OwnableProposa
         }
     }
 
+    function isMember(address eoaAddress)
+        external
+        view
+        override
+        returns (bool)
+    {
+        for (uint256 i = 0; i < _nextMemberId; i++) {
+            if (_members[i].eoaAddress == eoaAddress) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function isElectionCommissioner(address eoaAddress)
+        external
+        view
+        override
+        returns (bool)
+    {
+        for (uint256 i = 0; i < _nextMemberId; i++) {
+            if (_members[i].eoaAddress == eoaAddress) {
+                return _members[i].isElectionCommissioner;
+            }
+        }
+        return false;
+    }
+
     function _addlMember(string memory name, address eoaAddress) private {
         _addMemeber(name, eoaAddress, false);
     }
@@ -81,12 +109,12 @@ contract MemberManager is Ownable, ApplicationBase, IApplication, OwnableProposa
     function _addMemeber(
         string memory name,
         address eoaAddress,
-        bool isElectionCommissioner
+        bool isElectionCommissionerFlg
     ) private {
         _members[_nextMemberId] = Member(
             name,
             eoaAddress,
-            isElectionCommissioner
+            isElectionCommissionerFlg
         );
         _nextMemberId++;
         emit MemberAdded(name, eoaAddress);

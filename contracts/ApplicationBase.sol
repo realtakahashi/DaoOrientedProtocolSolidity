@@ -2,10 +2,11 @@
 pragma solidity ^0.8.28;
 
 // import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
+import {IApplication} from "./IApplication.sol";
 
 // import "hardhat/console.sol";
 
-contract ApplicationBase {
+abstract contract ApplicationBase is IApplication {
     string public version;
     uint256 public nextInterfaceId;
     mapping(uint256 interfaceId => string) public _interfaces;

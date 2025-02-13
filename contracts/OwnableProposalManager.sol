@@ -20,7 +20,7 @@ contract OwnableProposalManager {
         _;
     }
 
-    function setProposalManager(address proposalManager) internal {
+    function _setProposalManager(address proposalManager) internal {
         _proposalManager = proposalManager;
     }
 }

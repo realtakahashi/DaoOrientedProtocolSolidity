@@ -6,6 +6,7 @@ import {OwnableMember} from "./OwnableMember.sol";
 import {ApplicationBase} from "./ApplicationBase.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IApplicationCore} from "./IApplicationCore.sol";
+import {IVoteManager} from "./IVoteManager.sol";
 
 contract ProposalManager is Ownable, OwnableMember, ApplicationBase {
     struct Proposal {
@@ -21,6 +22,7 @@ contract ProposalManager is Ownable, OwnableMember, ApplicationBase {
 
     uint256 public _nextProposalId;
     address private _applicationCore;
+    address private _voteManager;
     mapping(uint256 proposalId => Proposal) public _proposals;
 
     constructor() Ownable(msg.sender) {
@@ -28,15 +30,17 @@ contract ProposalManager is Ownable, OwnableMember, ApplicationBase {
         _addInterface("");
     }
 
-    function setMemberManager(address memberManager) external onlyOwner {
+    function setManagersAndApplicationCore(
+        address applicationCore,
+        address memberManager,
+        address voteManger
+    ) external onlyOwner {
         _setMemberManager(memberManager);
-    }
-
-    function setApplicationCore(address applicationCore) external onlyOwner {
+        _voteManager = voteManger;
         _applicationCore = applicationCore;
     }
 
-    function externalExecuteInterfase(
+    function externalExecuteInterface(
         string memory interfaceName,
         bytes memory data
     ) external override {}
@@ -66,5 +70,34 @@ contract ProposalManager is Ownable, OwnableMember, ApplicationBase {
             false
         );
         _nextProposalId++;
+    }
+
+    function createAndStartVoging(
+        uint256 proposalId
+    ) external onlyElectionCommissioner {
+        IVoteManager(_voteManager).createAndStartVote(proposalId);
+    }
+
+    function executeProposal(
+        uint256 proposalId
+    ) external onlyElectionCommissioner {
+        // todo: check voting result
+        Proposal storage proposal = _proposals[proposalId];
+        require(
+            !proposal.isExecuted,
+            "ProposalManager: proposal is already executed"
+        );
+        require(
+            IApplicationCore(_applicationCore).isInstalledApplication(
+                proposal.targetContractAddress
+            ),
+            "ProposalManager: target contract is not installed"
+        );
+
+        IApplication(proposal.targetContractAddress).externalExecuteInterface(
+            proposal.targetInterface,
+            proposal.parameters
+        );
+        proposal.isExecuted = true;
     }
 }

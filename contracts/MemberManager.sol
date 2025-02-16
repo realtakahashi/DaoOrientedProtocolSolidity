@@ -38,7 +38,7 @@ contract MemberManager is Ownable, ApplicationBase, OwnableProposalManager, IMem
         _setProposalManager(proposalManager);
     }
 
-    function externalExecuteInterfase(
+    function externalExecuteInterface(
         string memory interfaceName,
         bytes memory data
     ) external alreadySetProposalManager onlyProposalManager {
@@ -95,6 +95,10 @@ contract MemberManager is Ownable, ApplicationBase, OwnableProposalManager, IMem
             }
         }
         return false;
+    }
+
+    function getMemberCount() external view override returns (uint256) {
+        return _nextMemberId - 1;
     }
 
     function _addlMember(string memory name, address eoaAddress) private {

@@ -5,10 +5,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {OwnableMember} from "./OwnableMember.sol";
 import {IMemberManager} from "./IMemberManager.sol";
 import {IVoteManager, VoteType} from "./IVoteManager.sol";
+import {ApplicationBase} from "./ApplicationBase.sol";
 
-contract VoteManager is OwnableMember, Ownable, IVoteManager {
-
-
+contract VoteManager is OwnableMember, Ownable, ApplicationBase, IVoteManager {
     enum VoteStatus {
         Voting,
         Approved,
@@ -31,6 +30,30 @@ contract VoteManager is OwnableMember, Ownable, IVoteManager {
     constructor(uint256 _percentageForApproval, uint256 _minimumVotesPercentage ) Ownable(msg.sender) {
         percentageForApproval = _percentageForApproval;
         minimumVotesPercentage = _minimumVotesPercentage;
+        _addInterface("setPercentageForApproval");
+        _addInterface("setMinimumVotesPercentage");   
+    }
+
+    function externalExecuteInterface(
+        string memory interfaceName,
+        bytes memory data
+    ) external override {
+        if (
+            keccak256(abi.encodePacked(interfaceName)) ==
+            keccak256(abi.encodePacked("setPercentageForApproval"))
+        ) {
+            (uint256 _percentageForApproval) = abi.decode(data, (uint256));
+            _setPercentageForApproval(_percentageForApproval);
+        } else if (
+            keccak256(abi.encodePacked(interfaceName)) ==
+            keccak256(abi.encodePacked("setMinimumVotesPercentage"))
+        ) {
+            (uint256 _minimumVotesPercentage) = abi.decode(data, (uint256));
+            _setMinimumVotesPercentage(_minimumVotesPercentage);
+        }
+        else {
+            revert("VoteManager: interface not found");
+        }
     }
 
     function setMemberManager(address memberManager) external onlyOwner {
@@ -80,5 +103,13 @@ contract VoteManager is OwnableMember, Ownable, IVoteManager {
         } else {
             votes[proposalId].status = VoteStatus.Rejected;
         }
+    }
+
+    function _setPercentageForApproval(uint256 _percentageForApproval) internal {
+        percentageForApproval = _percentageForApproval;
+    }
+
+    function _setMinimumVotesPercentage(uint256 _minimumVotesPercentage) internal {
+        minimumVotesPercentage = _minimumVotesPercentage;
     }
 }

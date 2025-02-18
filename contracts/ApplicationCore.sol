@@ -4,10 +4,11 @@ pragma solidity ^0.8.28;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IApplicationCore} from "./IApplicationCore.sol";
 import {OwnableProposalManager} from "./OwnableProposalManager.sol";
+import {ApplicationBase} from "./ApplicationBase.sol";
 
 // import "hardhat/console.sol";
 
-contract ApplicationCore is Ownable, IApplicationCore, OwnableProposalManager {
+contract ApplicationCore is Ownable, IApplicationCore, ApplicationBase, OwnableProposalManager {
     struct Application {
         bool isPreinstalled;
         string name;
@@ -49,14 +50,62 @@ contract ApplicationCore is Ownable, IApplicationCore, OwnableProposalManager {
         );
         _applicationCount++;
 
+        _addInterface("installApplication");
+        _addInterface("updateMemberManager");
+        _addInterface("updateProposalManager");
+        _addInterface("updateVoteManager");
+        _addInterface("deleteApplication");
+        
         _setProposalManager(proposalManager);
+    }
+
+    function externalExecuteInterface(
+        string memory interfaceName,
+        bytes memory data
+    ) external override onlyProposalManager {
+        if (
+            keccak256(abi.encodePacked(interfaceName)) ==
+            keccak256(abi.encodePacked("installApplication"))
+        ) {
+            (string memory name, string memory version, address contractAddress) = abi.decode(
+                data,
+                (string, string, address)
+            );
+            installApplication(name, version, contractAddress);
+        } else if (
+            keccak256(abi.encodePacked(interfaceName)) ==
+            keccak256(abi.encodePacked("updateMemberManager"))
+        ) {
+            (address memberManager) = abi.decode(data, (address));
+            updateMemberManager(memberManager);
+        } else if (
+            keccak256(abi.encodePacked(interfaceName)) ==
+            keccak256(abi.encodePacked("updateProposalManager"))
+        ) {
+            (address proposalManager) = abi.decode(data, (address));
+            updateProposalManager(proposalManager);
+        } else if (
+            keccak256(abi.encodePacked(interfaceName)) ==
+            keccak256(abi.encodePacked("updateVoteManager"))
+        ) {
+            (address voteManager) = abi.decode(data, (address));
+            updateVoteManager(voteManager);
+        } else if (
+            keccak256(abi.encodePacked(interfaceName)) ==
+            keccak256(abi.encodePacked("deleteApplication"))
+        ) {
+            (uint256 index) = abi.decode(data, (uint256));
+            deleteApplication(index);
+        } else {
+            revert("ApplicationCore: interface not found");
+        }
     }
 
     function installApplication(
         string memory name,
         string memory version,
         address contractAddress
-    ) public onlyProposalManager {
+    ) private {
         //todo: check having application interface
         _applications[_applicationCount] = Application(
             true,
@@ -67,22 +116,22 @@ contract ApplicationCore is Ownable, IApplicationCore, OwnableProposalManager {
         _applicationCount++;
     }
 
-    function updateMemberManager(address memberManager) public onlyProposalManager {
+    function updateMemberManager(address memberManager) private {
         //todo: check having application interface
         _memberManager = memberManager;
     }
 
-    function updateProposalManager(address proposalManager) public onlyProposalManager {
+    function updateProposalManager(address proposalManager) private {
         //todo: check having application interface
         _proposalManager = proposalManager;
     }
 
-    function updateVoteManager(address voteManager) public onlyProposalManager {
+    function updateVoteManager(address voteManager) private {
         //todo: check having application interface
         _voteManager = voteManager;
     }
 
-    function deleteApplication(uint256 index) public onlyProposalManager {
+    function deleteApplication(uint256 index) private {
         require(
             index < _applicationCount,
             "Index is out of range of applications"

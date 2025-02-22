@@ -4,16 +4,11 @@ pragma solidity ^0.8.28;
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ApplicationBase} from "./ApplicationBase.sol";
 import {OwnableProposalManager} from "./OwnableProposalManager.sol";
-import {IMemberManager} from "./IMemberManager.sol";
+import {IMemberManager, Member} from "./IMemberManager.sol";
 
 // import "hardhat/console.sol";
 
 contract MemberManager is Ownable, ApplicationBase, OwnableProposalManager, IMemberManager {
-    struct Member {
-        string name;
-        address eoaAddress;
-        bool isElectionCommissioner;
-    }
 
     uint256 public _nextMemberId;
     mapping(uint256 => Member) public _members;
@@ -98,7 +93,19 @@ contract MemberManager is Ownable, ApplicationBase, OwnableProposalManager, IMem
     }
 
     function getMemberCount() external view override returns (uint256) {
-        return _nextMemberId - 1;
+        return _nextMemberId;
+    }
+
+    function getMemberList()
+        external
+        view
+        returns (Member[] memory)
+    {
+        Member[] memory members = new Member[](_nextMemberId);
+        for (uint256 i = 0; i < _nextMemberId; i++) {
+            members[i] = _members[i];
+        }
+        return members;
     }
 
     function _addlMember(string memory name, address eoaAddress) private {

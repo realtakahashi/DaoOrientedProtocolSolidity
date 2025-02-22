@@ -7,6 +7,7 @@ contract OwnableMember {
     address private _memberManager;
 
     modifier onlyMember() {
+        require(_memberManager != address(0), "OwnableMemberManager: member manager is not set");
         require(
             _checkMember(),
             "OwnableMemberManager: caller is not the member manager"
@@ -15,6 +16,7 @@ contract OwnableMember {
     }
 
     modifier onlyElectionCommissioner() {
+        require(_memberManager != address(0), "OwnableMemberManager: member manager is not set");
         require(
             _checkElectionCommissioner(),
             "OwnableMemberManager: caller is not the election commissioner"

@@ -6,6 +6,7 @@ import {OwnableMember} from "./OwnableMember.sol";
 import {IMemberManager} from "./IMemberManager.sol";
 import {IVoteManager, VoteType} from "./IVoteManager.sol";
 import {ApplicationBase} from "./ApplicationBase.sol";
+import {IProposalManager} from "./IProposalManager.sol";
 
 contract VoteManager is OwnableMember, Ownable, ApplicationBase, IVoteManager {
     enum VoteStatus {
@@ -26,6 +27,9 @@ contract VoteManager is OwnableMember, Ownable, ApplicationBase, IVoteManager {
     uint256 public minimumVotesPercentage;
 
     address private _memberManager;
+    address private _proposalManager;
+
+    event VoteStarted(uint256 proposalId);
 
     constructor(uint256 _percentageForApproval, uint256 _minimumVotesPercentage ) Ownable(msg.sender) {
         percentageForApproval = _percentageForApproval;
@@ -56,14 +60,21 @@ contract VoteManager is OwnableMember, Ownable, ApplicationBase, IVoteManager {
         }
     }
 
-    function setMemberManager(address memberManager) external onlyOwner {
+    function setManagers(address memberManager, address proposalManager) external onlyOwner {
+        _proposalManager = proposalManager;
         _memberManager = memberManager;
+        _setMemberManager(memberManager);
     }
 
     function createAndStartVote(
         uint256 proposalId
-    ) public onlyElectionCommissioner {
+    ) external onlyElectionCommissioner {
+        require(
+            IProposalManager(_proposalManager).proposalExists(proposalId),
+            "VoteManager: proposal does not exist"
+        );
         votes[proposalId] = Vote(0, 0, VoteStatus.Voting);
+        emit VoteStarted(proposalId);
     }
 
     function vote(uint256 proposalId, VoteType voteType) external onlyMember {
@@ -103,6 +114,10 @@ contract VoteManager is OwnableMember, Ownable, ApplicationBase, IVoteManager {
         } else {
             votes[proposalId].status = VoteStatus.Rejected;
         }
+    }
+
+    function isPassed(uint256 proposalId) external view returns (bool) {
+        return votes[proposalId].status == VoteStatus.Approved;
     }
 
     function _setPercentageForApproval(uint256 _percentageForApproval) internal {

@@ -1,33 +1,37 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import { console } from "hardhat/console.sol";
+
 import {IApplication} from "./IApplication.sol";
 import {OwnableMember} from "./OwnableMember.sol";
 import {ApplicationBase} from "./ApplicationBase.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IApplicationCore} from "./IApplicationCore.sol";
 import {IVoteManager} from "./IVoteManager.sol";
+import {IProposalManager, Proposal} from "./IProposalManager.sol";
 
-contract ProposalManager is Ownable, OwnableMember, ApplicationBase {
-    struct Proposal {
-        uint256 id;
-        string title;
-        string description;
-        address proposer;
-        address targetContractAddress;
-        string targetInterface;
-        bytes parameters;
-        bool isExecuted;
-    }
+contract ProposalManager is Ownable, OwnableMember, ApplicationBase, IProposalManager {
 
     uint256 public _nextProposalId;
     address private _applicationCore;
     address private _voteManager;
     mapping(uint256 proposalId => Proposal) public _proposals;
 
+    event ProposalAdded(
+        uint256 proposalId,
+        string title,
+        string description,
+        address proposer,
+        address targetContractAddress,
+        string targetInterface,
+        bytes parameters
+    );
+
     constructor() Ownable(msg.sender) {
         _setVersion("1.0.0");
         _addInterface("");
+        _nextProposalId = 0;
     }
 
     function setManagersAndApplicationCore(
@@ -70,18 +74,22 @@ contract ProposalManager is Ownable, OwnableMember, ApplicationBase {
             false
         );
         _nextProposalId++;
-    }
 
-    function createAndStartVoging(
-        uint256 proposalId
-    ) external onlyElectionCommissioner {
-        IVoteManager(_voteManager).createAndStartVote(proposalId);
+        emit ProposalAdded(
+            _nextProposalId - 1,
+            title,
+            description,
+            msg.sender,
+            targetContractAddress,
+            targetInterface,
+            parameters
+        );
+
     }
 
     function executeProposal(
         uint256 proposalId
     ) external onlyElectionCommissioner {
-        // todo: check voting result
         Proposal storage proposal = _proposals[proposalId];
         require(
             !proposal.isExecuted,
@@ -93,11 +101,24 @@ contract ProposalManager is Ownable, OwnableMember, ApplicationBase {
             ),
             "ProposalManager: target contract is not installed"
         );
+        require(IVoteManager(_voteManager).isPassed(proposalId), "ProposalManager: vote is not approved");
 
         IApplication(proposal.targetContractAddress).externalExecuteInterface(
             proposal.targetInterface,
             proposal.parameters
         );
         proposal.isExecuted = true;
+    }
+
+    function getProposalList() external view returns (Proposal[] memory) {
+        Proposal[] memory proposals = new Proposal[](_nextProposalId);
+        for (uint256 i = 0; i < _nextProposalId; i++) {
+            proposals[i] = _proposals[i];
+        }
+        return proposals;
+    }
+
+    function proposalExists(uint256 proposalId) external view returns (bool) {
+        return _proposals[proposalId].proposer != address(0);
     }
 }

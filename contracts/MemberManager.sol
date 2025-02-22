@@ -8,8 +8,12 @@ import {IMemberManager, Member} from "./IMemberManager.sol";
 
 // import "hardhat/console.sol";
 
-contract MemberManager is Ownable, ApplicationBase, OwnableProposalManager, IMemberManager {
-
+contract MemberManager is
+    Ownable,
+    ApplicationBase,
+    OwnableProposalManager,
+    IMemberManager
+{
     uint256 public _nextMemberId;
     mapping(uint256 => Member) public _members;
 
@@ -52,24 +56,20 @@ contract MemberManager is Ownable, ApplicationBase, OwnableProposalManager, IMem
         ) {
             uint256 memberId = abi.decode(data, (uint256));
             _deleteMember(memberId);
-        }else if (
+        } else if (
             keccak256(abi.encodePacked(interfaceName)) ==
             keccak256(abi.encodePacked("resetElectionCommissioner"))
         ) {
             uint256 memberId = abi.decode(data, (uint256));
             resetElectionCommissioner(memberId);
-        }
-        else {
+        } else {
             revert("The interface is not supported");
         }
     }
 
-    function isMember(address eoaAddress)
-        external
-        view
-        override
-        returns (bool)
-    {
+    function isMember(
+        address eoaAddress
+    ) external view override returns (bool) {
         for (uint256 i = 0; i < _nextMemberId; i++) {
             if (_members[i].eoaAddress == eoaAddress) {
                 return true;
@@ -78,12 +78,9 @@ contract MemberManager is Ownable, ApplicationBase, OwnableProposalManager, IMem
         return false;
     }
 
-    function isElectionCommissioner(address eoaAddress)
-        external
-        view
-        override
-        returns (bool)
-    {
+    function isElectionCommissioner(
+        address eoaAddress
+    ) external view override returns (bool) {
         for (uint256 i = 0; i < _nextMemberId; i++) {
             if (_members[i].eoaAddress == eoaAddress) {
                 return _members[i].isElectionCommissioner;
@@ -92,18 +89,24 @@ contract MemberManager is Ownable, ApplicationBase, OwnableProposalManager, IMem
         return false;
     }
 
-    function getMemberCount() external view override returns (uint256) {
-        return _nextMemberId;
+    function getMemberCount() public view override returns (uint256) {
+        uint256 count = 0;
+        for (uint256 i = 0; i < _nextMemberId; i++) {
+            if (_members[i].eoaAddress != address(0)) {
+                count++;
+            }
+        }
+        return count;
     }
 
-    function getMemberList()
-        external
-        view
-        returns (Member[] memory)
-    {
-        Member[] memory members = new Member[](_nextMemberId);
+    function getMemberList() external view returns (Member[] memory) {
+        Member[] memory members = new Member[](getMemberCount());
+        uint256 count = 0;
         for (uint256 i = 0; i < _nextMemberId; i++) {
-            members[i] = _members[i];
+            if (_members[i].eoaAddress != address(0)) {
+                members[count] = _members[i];
+                count++;
+            }
         }
         return members;
     }
@@ -113,6 +116,15 @@ contract MemberManager is Ownable, ApplicationBase, OwnableProposalManager, IMem
     }
 
     function _deleteMember(uint256 memberId) private {
+        require(
+            _members[memberId].eoaAddress != address(0),
+            "MemberManager: member does not exist"
+        );
+        require(
+            !_members[memberId].isElectionCommissioner,
+            "MemberManager: cannot delete election commissioner"
+        );
+        //require(getMemberCount() > 1, "MemberManager: cannot delete last member");
         delete _members[memberId];
         emit MemberDeleted(memberId);
     }
@@ -123,6 +135,7 @@ contract MemberManager is Ownable, ApplicationBase, OwnableProposalManager, IMem
         bool isElectionCommissionerFlg
     ) private {
         _members[_nextMemberId] = Member(
+            _nextMemberId,
             name,
             eoaAddress,
             isElectionCommissionerFlg
@@ -132,11 +145,14 @@ contract MemberManager is Ownable, ApplicationBase, OwnableProposalManager, IMem
     }
 
     function resetElectionCommissioner(uint256 memberId) private {
-        for(uint256 i = 0; i < _nextMemberId; i++) {
+        require(
+            _members[memberId].eoaAddress != address(0),
+            "MemberManager: member does not exist"
+        );
+        for (uint256 i = 0; i < _nextMemberId; i++) {
             _members[i].isElectionCommissioner = false;
         }
         _members[memberId].isElectionCommissioner = true;
         emit ElectionCommissionerChanged(memberId);
     }
-
 }

@@ -73,6 +73,10 @@ contract VoteManager is OwnableMember, Ownable, ApplicationBase, IVoteManager {
             IProposalManager(_proposalManager).proposalExists(proposalId),
             "VoteManager: proposal does not exist"
         );
+        require(
+            (votes[proposalId].status != VoteStatus.Rejected) && (votes[proposalId].status != VoteStatus.Approved),
+            "VoteManager: vote is already done"
+        );
         votes[proposalId] = Vote(0, 0, VoteStatus.Voting);
         emit VoteStarted(proposalId);
     }

@@ -1,16 +1,16 @@
 import hre from "hardhat";
 
 export async function deployMemberManagerFixture() {
-  const [owner, otherAccount] = await hre.ethers.getSigners();
+  const [owner, otherAccount, thirdAccount] = await hre.ethers.getSigners();
 
   const MemberManager = await hre.ethers.getContractFactory("MemberManager");
   const memberManager = await MemberManager.deploy("Shin", owner.address, {});
 
-  return { memberManager, owner, otherAccount };
+  return { memberManager, owner, otherAccount, thirdAccount };
 }
 
 export async function deployProposalManagerFixture() {
-  const [owner, otherAccount] = await hre.ethers.getSigners();
+  const [owner, otherAccount, thirdAccount] = await hre.ethers.getSigners();
 
   const ProposalManager = await hre.ethers.getContractFactory(
     "ProposalManager"
@@ -41,7 +41,7 @@ export async function deployApplicationCoreFixture(
   proposalManager: string,
   voteManager: string
 ) {
-  const [owner, otherAccount] = await hre.ethers.getSigners();
+  const [owner, otherAccount, thirdAccount] = await hre.ethers.getSigners();
 
   const ApplicationCore = await hre.ethers.getContractFactory(
     "ApplicationCore"
@@ -53,5 +53,5 @@ export async function deployApplicationCoreFixture(
     {}
   );
 
-  return { applicationCore, owner, otherAccount };
+  return { applicationCore, owner, otherAccount, thirdAccount };
 }

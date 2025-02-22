@@ -2,6 +2,7 @@
 pragma solidity ^0.8.28;
 
 struct Member {
+    uint256 memberId;
     string name;
     address eoaAddress;
     bool isElectionCommissioner;

@@ -27,7 +27,7 @@ contract MemberManager is
     ) Ownable(msg.sender) {
         _nextMemberId = 0;
         _addMemeber(nameOfFirstMember, eoaAddressOfFirstMember, true);
-        _setVersion("0.01");
+        _setVersion("1.0.0");
         _addInterface("addMember");
         _addInterface("deleteMember");
         _addInterface("resetElectionCommissioner");
@@ -40,7 +40,7 @@ contract MemberManager is
     function externalExecuteInterface(
         string memory interfaceName,
         bytes memory data
-    ) external alreadySetProposalManager onlyProposalManager {
+    ) external onlyProposalManager {
         if (
             keccak256(abi.encodePacked(interfaceName)) ==
             keccak256(abi.encodePacked("addMember"))

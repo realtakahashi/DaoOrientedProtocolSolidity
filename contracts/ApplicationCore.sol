@@ -8,15 +8,20 @@ import {ApplicationBase} from "./ApplicationBase.sol";
 
 // import "hardhat/console.sol";
 
-contract ApplicationCore is Ownable, IApplicationCore, ApplicationBase, OwnableProposalManager {
+contract ApplicationCore is
+    Ownable,
+    IApplicationCore,
+    ApplicationBase,
+    OwnableProposalManager
+{
     struct Application {
+        uint256 applicationId;
         bool isPreinstalled;
         string name;
-        string version;
         address contractAddress;
     }
 
-    uint256 public _applicationCount;
+    uint256 public _nextApplicationId;
     mapping(uint256 => Application) public _applications;
     address private _memberManager;
     address private _proposalManager;
@@ -27,35 +32,35 @@ contract ApplicationCore is Ownable, IApplicationCore, ApplicationBase, OwnableP
         address proposalManager,
         address voteManager
     ) Ownable(msg.sender) {
-        _applicationCount = 0;
-        _applications[_applicationCount] = Application(
+        _nextApplicationId = 0;
+        _applications[_nextApplicationId] = Application(
+            _nextApplicationId,
             true,
             "MemberManager",
-            "0.01",
             memberManager
         );
-        _applicationCount++;
-        _applications[_applicationCount] = Application(
+        _nextApplicationId++;
+        _applications[_nextApplicationId] = Application(
+            _nextApplicationId,
             true,
             "ProposalManager",
-            "0.01",
             proposalManager
         );
-        _applicationCount++;
-        _applications[_applicationCount] = Application(
+        _nextApplicationId++;
+        _applications[_nextApplicationId] = Application(
+            _nextApplicationId,
             true,
             "VoteManager",
-            "0.01",
             voteManager
         );
-        _applicationCount++;
+        _nextApplicationId++;
 
         _addInterface("installApplication");
         _addInterface("updateMemberManager");
         _addInterface("updateProposalManager");
         _addInterface("updateVoteManager");
         _addInterface("deleteApplication");
-        
+
         _setProposalManager(proposalManager);
     }
 
@@ -67,35 +72,35 @@ contract ApplicationCore is Ownable, IApplicationCore, ApplicationBase, OwnableP
             keccak256(abi.encodePacked(interfaceName)) ==
             keccak256(abi.encodePacked("installApplication"))
         ) {
-            (string memory name, string memory version, address contractAddress) = abi.decode(
-                data,
-                (string, string, address)
-            );
-            installApplication(name, version, contractAddress);
+            (
+                string memory name,
+                address contractAddress
+            ) = abi.decode(data, (string, address));
+            installApplication(name, contractAddress);
         } else if (
             keccak256(abi.encodePacked(interfaceName)) ==
             keccak256(abi.encodePacked("updateMemberManager"))
         ) {
-            (address memberManager) = abi.decode(data, (address));
+            address memberManager = abi.decode(data, (address));
             updateMemberManager(memberManager);
         } else if (
             keccak256(abi.encodePacked(interfaceName)) ==
             keccak256(abi.encodePacked("updateProposalManager"))
         ) {
-            (address proposalManager) = abi.decode(data, (address));
+            address proposalManager = abi.decode(data, (address));
             updateProposalManager(proposalManager);
         } else if (
             keccak256(abi.encodePacked(interfaceName)) ==
             keccak256(abi.encodePacked("updateVoteManager"))
         ) {
-            (address voteManager) = abi.decode(data, (address));
+            address voteManager = abi.decode(data, (address));
             updateVoteManager(voteManager);
         } else if (
             keccak256(abi.encodePacked(interfaceName)) ==
             keccak256(abi.encodePacked("deleteApplication"))
         ) {
-            (uint256 index) = abi.decode(data, (uint256));
-            deleteApplication(index);
+            uint256 applictionId = abi.decode(data, (uint256));
+            unInstallApplication(applictionId);
         } else {
             revert("ApplicationCore: interface not found");
         }
@@ -103,17 +108,16 @@ contract ApplicationCore is Ownable, IApplicationCore, ApplicationBase, OwnableP
 
     function installApplication(
         string memory name,
-        string memory version,
         address contractAddress
     ) private {
         //todo: check having application interface
-        _applications[_applicationCount] = Application(
+        _applications[_nextApplicationId] = Application(
+            _nextApplicationId,
             true,
             name,
-            version,
             contractAddress
         );
-        _applicationCount++;
+        _nextApplicationId++;
     }
 
     function updateMemberManager(address memberManager) private {
@@ -131,20 +135,20 @@ contract ApplicationCore is Ownable, IApplicationCore, ApplicationBase, OwnableP
         _voteManager = voteManager;
     }
 
-    function deleteApplication(uint256 index) private {
+    function unInstallApplication(uint256 applicationId) private {
         require(
-            index < _applicationCount,
-            "Index is out of range of applications"
+            _applications[applicationId].contractAddress != address(0),
+            "The application does not exists."
         );
-        delete _applications[index];
+        delete _applications[applicationId];
     }
 
-    function isInstalledApplication(address applicationAdress)
-        public
-        view
-        returns (bool)
-    {
-        for (uint256 i = 0; i < _applicationCount; i++) {
+    // function getApplicationList() external returns()
+
+    function isInstalledApplication(
+        address applicationAdress
+    ) public view returns (bool) {
+        for (uint256 i = 0; i < _nextApplicationId; i++) {
             if (_applications[i].contractAddress == applicationAdress) {
                 return true;
             }

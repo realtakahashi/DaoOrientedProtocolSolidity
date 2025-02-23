@@ -3,12 +3,13 @@ pragma solidity ^0.8.28;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {OwnableMember} from "./OwnableMember.sol";
+import {OwnableProposalManager} from "./OwnableProposalManager.sol";
 import {IMemberManager} from "./IMemberManager.sol";
 import {IVoteManager, VoteType} from "./IVoteManager.sol";
 import {ApplicationBase} from "./ApplicationBase.sol";
 import {IProposalManager} from "./IProposalManager.sol";
 
-contract VoteManager is OwnableMember, Ownable, ApplicationBase, IVoteManager {
+contract VoteManager is OwnableMember, OwnableProposalManager, Ownable, ApplicationBase, IVoteManager {
     enum VoteStatus {
         Voting,
         Approved,
@@ -34,6 +35,7 @@ contract VoteManager is OwnableMember, Ownable, ApplicationBase, IVoteManager {
     constructor(uint256 _percentageForApproval, uint256 _minimumVotesPercentage ) Ownable(msg.sender) {
         percentageForApproval = _percentageForApproval;
         minimumVotesPercentage = _minimumVotesPercentage;
+        _setVersion("1.0.0");
         _addInterface("setPercentageForApproval");
         _addInterface("setMinimumVotesPercentage");   
     }
@@ -41,7 +43,7 @@ contract VoteManager is OwnableMember, Ownable, ApplicationBase, IVoteManager {
     function externalExecuteInterface(
         string memory interfaceName,
         bytes memory data
-    ) external override {
+    ) external override onlyProposalManager {
         if (
             keccak256(abi.encodePacked(interfaceName)) ==
             keccak256(abi.encodePacked("setPercentageForApproval"))
@@ -64,6 +66,7 @@ contract VoteManager is OwnableMember, Ownable, ApplicationBase, IVoteManager {
         _proposalManager = proposalManager;
         _memberManager = memberManager;
         _setMemberManager(memberManager);
+        _setProposalManager(proposalManager);
     }
 
     function createAndStartVote(
@@ -107,7 +110,11 @@ contract VoteManager is OwnableMember, Ownable, ApplicationBase, IVoteManager {
         );
 
         uint256 totalVotes = votes[proposalId].yesVotes + votes[proposalId].noVotes;
-        uint256 yesVotesPercentage = (votes[proposalId].yesVotes * 100) / totalVotes;
+
+        uint256 yesVotesPercentage = 0;
+        if (votes[proposalId].yesVotes > 0) {
+            yesVotesPercentage = 100 * votes[proposalId].yesVotes / totalVotes;
+        }
         uint256 memberCount = IMemberManager(_memberManager).getMemberCount();
 
         if (totalVotes/memberCount*100 < minimumVotesPercentage) {

@@ -7,16 +7,19 @@ contract OwnableMember {
     address private _memberManager;
 
     modifier onlyMember() {
-        require(_memberManager != address(0), "OwnableMemberManager: member manager is not set");
         require(
-            _checkMember(),
-            "OwnableMemberManager: caller is not the member manager"
+            _memberManager != address(0),
+            "OwnableMemberManager: member manager is not set"
         );
+        require(_checkMember(), "OwnableMemberManager: caller is not a member");
         _;
     }
 
     modifier onlyElectionCommissioner() {
-        require(_memberManager != address(0), "OwnableMemberManager: member manager is not set");
+        require(
+            _memberManager != address(0),
+            "OwnableMemberManager: member manager is not set"
+        );
         require(
             _checkElectionCommissioner(),
             "OwnableMemberManager: caller is not the election commissioner"
@@ -33,6 +36,7 @@ contract OwnableMember {
     }
 
     function _checkElectionCommissioner() private view returns (bool) {
-        return IMemberManager(_memberManager).isElectionCommissioner(msg.sender);
+        return
+            IMemberManager(_memberManager).isElectionCommissioner(msg.sender);
     }
 }

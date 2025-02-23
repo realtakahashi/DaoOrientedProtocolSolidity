@@ -5,7 +5,10 @@ contract OwnableProposalManager {
     address private _proposalManager;
 
     modifier onlyProposalManager() {
-        require(_proposalManager != address(0), "OwnableProposalManager: proposal manager is not set");
+        require(
+            _proposalManager != address(0),
+            "OwnableProposalManager: proposal manager is not set"
+        );
         require(
             msg.sender == _proposalManager,
             "OwnableProposalManager: caller is not the proposal manager"
@@ -13,16 +16,11 @@ contract OwnableProposalManager {
         _;
     }
 
-    modifier alreadySetProposalManager() {
-        require(_proposalManager != address(0), "OwnableProposalManager: proposal manager is not set");
-        require(
-            _proposalManager != address(0),
-            "OwnableProposalManager: proposal manager is not set"
-        );
-        _;
-    }
-
     function _setProposalManager(address proposalManager) internal {
+        require(
+            _proposalManager == address(0),
+            "OwnableProposalManager: proposal manager is already set"
+        );
         _proposalManager = proposalManager;
     }
 }

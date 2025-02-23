@@ -20,7 +20,7 @@ describe("ApplicationCore", function () {
         )
       );
 
-      expect(await applicationCore._applicationCount()).to.equal(3);
+      expect(await applicationCore._nextApplicationId()).to.equal(3);
       expect((await applicationCore._applications(0)).isPreinstalled).to.equal(
         true
       );
@@ -30,9 +30,6 @@ describe("ApplicationCore", function () {
       expect((await applicationCore._applications(2)).isPreinstalled).to.equal(
         true
       );
-      expect((await applicationCore._applications(0)).version).to.equal("0.01");
-      expect((await applicationCore._applications(1)).version).to.equal("0.01");
-      expect((await applicationCore._applications(2)).version).to.equal("0.01");
       expect((await applicationCore._applications(0)).contractAddress).to.equal(
         "0xCC16907F3C6A3cB5CDd0CDcd372970c2ea98e127"
       );

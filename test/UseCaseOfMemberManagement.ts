@@ -7,7 +7,6 @@ import {
   deployVoteManagerFixture,
   deployApplicationCoreFixture,
 } from "./Helpers";
-import { string } from "hardhat/internal/core/params/argumentTypes";
 
 describe("Use Case Of Member Management", function () {
   describe("Deployment", function () {
@@ -72,6 +71,15 @@ describe("Use Case Of Member Management", function () {
         await voteManager.getAddress()
       );
 
+      //check version & interface
+      const versionOfMemberMnager = await memberManager.version();
+      expect(versionOfMemberMnager).to.equal("1.0.0");
+      const interfaceListOfMemberManager = await memberManager.getInterfaceList();
+      expect(interfaceListOfMemberManager.length).to.equal(3);
+      expect(interfaceListOfMemberManager[0]).to.equal("addMember");
+      expect(interfaceListOfMemberManager[1]).to.equal("deleteMember");
+      expect(interfaceListOfMemberManager[2]).to.equal("resetElectionCommissioner");
+
       // Can not delete the election commissioner
       const deleteData = ethers.AbiCoder.defaultAbiCoder().encode(
         ["uint256"],
@@ -90,7 +98,7 @@ describe("Use Case Of Member Management", function () {
       await voteManager.connect(owner).vote(0, 0);
       await voteManager.connect(owner).finishVote(0);
       await expect(proposalManager.connect(owner).executeProposal(0)).to.be
-        .reverted;
+        .revertedWith("MemberManager: cannot delete election commissioner");
 
       // Add second member
       const name = "Saki";
@@ -111,7 +119,7 @@ describe("Use Case Of Member Management", function () {
             "addMember",
             encodedData
           )
-      ).to.be.reverted;
+      ).to.be.rejectedWith("OwnableMemberManager: caller is not a member");
 
       await proposalManager.addProposal(
         "AddMember",
@@ -127,20 +135,31 @@ describe("Use Case Of Member Management", function () {
       expect(proposalList[1][1]).to.equal("AddMember");
       expect(proposalList[1][2]).to.equal("Adding a member.");
 
-      await expect(voteManager.connect(otherAccount).createAndStartVote(1)).to
-        .be.reverted;
+      await expect(
+        voteManager.connect(otherAccount).createAndStartVote(1)
+      ).to.be.revertedWith(
+        "OwnableMemberManager: caller is not the election commissioner"
+      );
       await voteManager.connect(owner).createAndStartVote(1);
 
-      await expect(voteManager.connect(otherAccount).vote(1, 0)).to.be.reverted;
+      await expect(
+        voteManager.connect(otherAccount).vote(1, 0)
+      ).to.be.rejectedWith("OwnableMemberManager: caller is not a member");
       await voteManager.connect(owner).vote(1, 0);
 
-      await expect(voteManager.connect(otherAccount).finishVote(1)).to.be
-        .reverted;
+      await expect(
+        voteManager.connect(otherAccount).finishVote(1)
+      ).to.be.revertedWith(
+        "OwnableMemberManager: caller is not the election commissioner"
+      );
       await voteManager.connect(owner).finishVote(1);
       expect(await voteManager.isPassed(1)).to.equal(true);
 
-      await expect(proposalManager.connect(otherAccount).executeProposal(1)).to
-        .be.reverted;
+      await expect(
+        proposalManager.connect(otherAccount).executeProposal(1)
+      ).to.be.revertedWith(
+        "OwnableMemberManager: caller is not the election commissioner"
+      );
       await proposalManager.connect(owner).executeProposal(1);
       const memberList = await memberManager.getMemberList();
       expect(memberList.length).to.equal(2);
@@ -173,8 +192,9 @@ describe("Use Case Of Member Management", function () {
       expect(proposalList2[2][1]).to.equal("AddMember2");
       expect(proposalList2[2][2]).to.equal("Adding another member.");
 
-      await expect(voteManager.connect(owner).createAndStartVote(1)).to.be
-        .reverted;
+      await expect(
+        voteManager.connect(owner).createAndStartVote(1)
+      ).to.be.rejectedWith("VoteManager: vote is already done");
       await voteManager.connect(owner).createAndStartVote(2);
 
       await voteManager.connect(owner).vote(2, 0);
@@ -183,8 +203,9 @@ describe("Use Case Of Member Management", function () {
       await voteManager.connect(owner).finishVote(2);
       expect(await voteManager.isPassed(2)).to.equal(true);
 
-      await expect(proposalManager.connect(owner).executeProposal(1)).to.be
-        .reverted;
+      await expect(
+        proposalManager.connect(owner).executeProposal(1)
+      ).to.be.revertedWith("ProposalManager: proposal is already executed");
       await proposalManager.connect(owner).executeProposal(2);
       const memberList2 = await memberManager.getMemberList();
       expect(memberList2.length).to.equal(3);
@@ -212,8 +233,9 @@ describe("Use Case Of Member Management", function () {
       await voteManager.connect(thirdAccount).vote(3, 1);
       await voteManager.connect(owner).finishVote(3);
       expect(await voteManager.isPassed(3)).to.equal(true);
-      await expect(proposalManager.connect(owner).executeProposal(3)).to.be
-        .reverted;
+      await expect(
+        proposalManager.connect(owner).executeProposal(3)
+      ).to.be.revertedWith("MemberManager: member does not exist");
 
       // Delete the second member
       const deleteData2 = ethers.AbiCoder.defaultAbiCoder().encode(
@@ -261,7 +283,9 @@ describe("Use Case Of Member Management", function () {
       await voteManager.connect(owner).createAndStartVote(5);
       await voteManager.connect(owner).vote(5, 0);
       // Other account is not a member
-      await expect(voteManager.connect(otherAccount).vote(5, 1)).to.be.reverted;
+      await expect(
+        voteManager.connect(otherAccount).vote(5, 1)
+      ).to.be.revertedWith("OwnableMemberManager: caller is not a member");
       await voteManager.connect(thirdAccount).vote(5, 0);
       await voteManager.connect(owner).finishVote(5);
       expect(await voteManager.isPassed(5)).to.equal(true);
@@ -345,7 +369,9 @@ describe("Use Case Of Member Management", function () {
       await voteManager.vote(0, 0);
       await voteManager.finishVote(0);
       expect(await voteManager.isPassed(0)).to.equal(true);
-      await expect(proposalManager.executeProposal(0)).to.be.reverted;
+      await expect(proposalManager.executeProposal(0)).to.be.revertedWith(
+        "The interface is not supported"
+      );
     });
     it("Non-member can not select the election commissioner.", async function () {
       const { memberManager, owner, otherAccount, thirdAccount } =
@@ -396,7 +422,7 @@ describe("Use Case Of Member Management", function () {
       await voteManager.finishVote(0);
       expect(await voteManager.isPassed(0)).to.equal(true);
       await expect(proposalManager.connect(owner).executeProposal(0)).to.be
-        .reverted;
+        .revertedWith("MemberManager: member does not exist");
     });
     it("Check error cases.", async function () {
       const { memberManager, owner, otherAccount, thirdAccount } =
@@ -412,7 +438,7 @@ describe("Use Case Of Member Management", function () {
         memberManager
           .connect(otherAccount)
           .setProposalManager(await proposalManager.getAddress())
-      ).to.be.reverted;
+      ).to.be.reverted; //Only owner can set the proposal manager
 
       const dummyData = ethers.AbiCoder.defaultAbiCoder().encode(
         ["string"],
@@ -423,7 +449,9 @@ describe("Use Case Of Member Management", function () {
         memberManager
           .connect(otherAccount)
           .externalExecuteInterface("dummy interface", dummyData)
-      ).to.be.revertedWith("OwnableProposalManager: proposal manager is not set");
+      ).to.be.revertedWith(
+        "OwnableProposalManager: proposal manager is not set"
+      );
 
       await memberManager.setProposalManager(
         await proposalManager.getAddress()
@@ -433,8 +461,9 @@ describe("Use Case Of Member Management", function () {
         memberManager
           .connect(otherAccount)
           .externalExecuteInterface("dummy interface", dummyData)
-      ).to.be.revertedWith("OwnableProposalManager: caller is not the proposal manager");
-
+      ).to.be.revertedWith(
+        "OwnableProposalManager: caller is not the proposal manager"
+      );
     });
   });
 });

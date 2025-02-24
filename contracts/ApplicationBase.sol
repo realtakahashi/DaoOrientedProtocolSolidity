@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-// import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IApplication} from "./IApplication.sol";
+import {ERC165} from "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
 // import "hardhat/console.sol";
 
-abstract contract ApplicationBase is IApplication {
+abstract contract ApplicationBase is IApplication, ERC165 {
     string public version;
     uint256 public nextInterfaceId;
     mapping(uint256 interfaceId => string) public _interfaces;
 
     event AddedInterface(string interfaceName);
 
-    constructor(){
+    constructor() {
         nextInterfaceId = 0;
     }
 
@@ -35,4 +35,11 @@ abstract contract ApplicationBase is IApplication {
         return interfaceList;
     }
 
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override returns (bool) {
+        return
+            interfaceId == type(IApplication).interfaceId ||
+            super.supportsInterface(interfaceId);
+    }
 }

@@ -5,6 +5,9 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IApplicationCore} from "./IApplicationCore.sol";
 import {OwnableProposalManager} from "./OwnableProposalManager.sol";
 import {ApplicationBase} from "./ApplicationBase.sol";
+import {IApplication} from "./IApplication.sol";
+import {IERC165} from "@openzeppelin/contracts/interfaces/IERC165.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 // import "hardhat/console.sol";
 
@@ -14,6 +17,7 @@ contract ApplicationCore is
     ApplicationBase,
     OwnableProposalManager
 {
+    using Strings for string;
     struct Application {
         uint256 applicationId;
         bool isPreinstalled;
@@ -62,6 +66,8 @@ contract ApplicationCore is
         _addInterface("deleteApplication");
 
         _setProposalManager(proposalManager);
+
+        // testCheck(memberManager);
     }
 
     function externalExecuteInterface(
@@ -72,10 +78,10 @@ contract ApplicationCore is
             keccak256(abi.encodePacked(interfaceName)) ==
             keccak256(abi.encodePacked("installApplication"))
         ) {
-            (
-                string memory name,
-                address contractAddress
-            ) = abi.decode(data, (string, address));
+            (string memory name, address contractAddress) = abi.decode(
+                data,
+                (string, address)
+            );
             installApplication(name, contractAddress);
         } else if (
             keccak256(abi.encodePacked(interfaceName)) ==
@@ -110,7 +116,10 @@ contract ApplicationCore is
         string memory name,
         address contractAddress
     ) private {
-        //todo: check having application interface
+        require(
+            checkApplicationInterface(contractAddress),
+            "This contract does not have correct interface."
+        );
         _applications[_nextApplicationId] = Application(
             _nextApplicationId,
             true,
@@ -121,18 +130,48 @@ contract ApplicationCore is
     }
 
     function updateMemberManager(address memberManager) private {
-        //todo: check having application interface
-        _memberManager = memberManager;
+        require(
+            checkApplicationInterface(memberManager),
+            "This contract does not have correct interface."
+        );
+        for(uint256 i=0; i<_nextApplicationId; i++){
+            if (_applications[i].name.equal("MemberManager")){
+                _memberManager = memberManager;
+                _applications[i].contractAddress = memberManager;
+                _applications[i].isPreinstalled = false;
+            }
+        }
+        revert("Unexpeted error is occurred.");
     }
 
     function updateProposalManager(address proposalManager) private {
-        //todo: check having application interface
-        _proposalManager = proposalManager;
+        require(
+            checkApplicationInterface(proposalManager),
+            "This contract does not have correct interface."
+        );
+        for(uint256 i=0; i<_nextApplicationId; i++){
+            if (_applications[i].name.equal("ProposalManager")){
+                _proposalManager = proposalManager;
+                _applications[i].contractAddress = proposalManager;
+                _applications[i].isPreinstalled = false;
+            }
+        }
+        revert("Unexpeted error is occurred.");
     }
 
     function updateVoteManager(address voteManager) private {
-        //todo: check having application interface
-        _voteManager = voteManager;
+        require(
+            checkApplicationInterface(voteManager),
+            "This contract does not have correct interface."
+        );
+        for(uint256 i=0; i<_nextApplicationId; i++){
+            if (_applications[i].name.equal("VoteManager")){
+                _voteManager = voteManager;
+                _applications[i].contractAddress = voteManager;
+                _applications[i].isPreinstalled = false;
+            }
+        }
+        revert("Unexpeted error is occurred.");
     }
 
     function unInstallApplication(uint256 applicationId) private {
@@ -140,10 +179,12 @@ contract ApplicationCore is
             _applications[applicationId].contractAddress != address(0),
             "The application does not exists."
         );
+        require(
+            _applications[applicationId].isPreinstalled == false,
+            "Pre-install application can not be deleted, it can be only updated."
+        );
         delete _applications[applicationId];
     }
-
-    // function getApplicationList() external returns()
 
     function isInstalledApplication(
         address applicationAdress
@@ -155,4 +196,18 @@ contract ApplicationCore is
         }
         return false;
     }
+
+    function checkApplicationInterface(
+        address targetContractAddress
+    ) private view returns (bool) {
+        bytes4 interfaceId = type(IApplication).interfaceId;
+        IERC165 target = IERC165(targetContractAddress);
+        return target.supportsInterface(interfaceId);
+    }
+
+    // function testCheck(address targetContractAddress) private view {
+    //     if (checkApplicationInterface(targetContractAddress) == false) {
+    //         revert("This contract does not have correct interface.");
+    //     }
+    // }
 }

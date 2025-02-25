@@ -55,3 +55,18 @@ export async function deployApplicationCoreFixture(
 
   return { applicationCore, owner, otherAccount, thirdAccount };
 }
+
+export async function deployExampleStorageFixture(proposalManager: string) {
+  const [owner, otherAccount, thirdAccount] = await hre.ethers.getSigners();
+
+  const ExmapleStorage = await hre.ethers.getContractFactory(
+    "ExampleStorage"
+  );
+  const exampleStorage = await ExmapleStorage.deploy(
+    proposalManager,
+    508,
+    {}
+  );
+
+  return { exampleStorage, owner, otherAccount, thirdAccount };
+}

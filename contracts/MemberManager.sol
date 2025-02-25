@@ -14,8 +14,8 @@ contract MemberManager is
     OwnableProposalManager,
     IMemberManager
 {
-    uint256 public _nextMemberId;
-    mapping(uint256 => Member) public _members;
+    uint256 private _nextMemberId;
+    mapping(uint256 => Member) private _members;
 
     event MemberAdded(string name, address eoaAddress);
     event MemberDeleted(uint256 memberId);

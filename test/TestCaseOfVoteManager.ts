@@ -69,7 +69,7 @@ describe("Use Case Of Member Management", function () {
       await voteManager.connect(owner).finishVote(0);
       expect(await voteManager.isPassed(0)).to.equal(true);
       await proposalManager.connect(owner).executeProposal(0);
-      expect(await voteManager.percentageForApproval()).to.equal(
+      expect(await voteManager.getPercentageForApproval()).to.equal(
         percentageForApproval
       );
 
@@ -98,7 +98,7 @@ describe("Use Case Of Member Management", function () {
       await voteManager.connect(owner).finishVote(1);
       expect(await voteManager.isPassed(1)).to.equal(true);
       await proposalManager.connect(owner).executeProposal(1);
-      expect(await voteManager.minimumVotesPercentage()).to.equal(
+      expect(await voteManager.getMinimumVotesPercentage()).to.equal(
         minimumVotesPercentage
       );
     });

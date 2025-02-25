@@ -22,10 +22,10 @@ contract VoteManager is OwnableMember, OwnableProposalManager, Ownable, Applicat
         VoteStatus status;
     }
 
-    mapping(uint256 proposalId => mapping(address => uint256)) public memberVotes;
-    mapping(uint256 proposalId => Vote) public votes;
-    uint256 public percentageForApproval;
-    uint256 public minimumVotesPercentage;
+    mapping(uint256 proposalId => mapping(address => uint256)) private memberVotes;
+    mapping(uint256 proposalId => Vote) private votes;
+    uint256 private percentageForApproval;
+    uint256 private minimumVotesPercentage;
 
     address private _memberManager;
     address private _proposalManager;
@@ -129,6 +129,14 @@ contract VoteManager is OwnableMember, OwnableProposalManager, Ownable, Applicat
 
     function isPassed(uint256 proposalId) external view returns (bool) {
         return votes[proposalId].status == VoteStatus.Approved;
+    }
+
+    function getPercentageForApproval() external view returns(uint256){
+        return percentageForApproval;
+    }
+
+    function getMinimumVotesPercentage() external view returns (uint256) {
+        return minimumVotesPercentage;
     }
 
     function _setPercentageForApproval(uint256 _percentageForApproval) internal {

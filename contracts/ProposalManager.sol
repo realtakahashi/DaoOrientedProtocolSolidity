@@ -13,10 +13,10 @@ import {IProposalManager, Proposal} from "./IProposalManager.sol";
 
 contract ProposalManager is Ownable, OwnableMember, ApplicationBase, IProposalManager {
 
-    uint256 public _nextProposalId;
+    uint256 private _nextProposalId;
     address private _applicationCore;
     address private _voteManager;
-    mapping(uint256 proposalId => Proposal) public _proposals;
+    mapping(uint256 proposalId => Proposal) private _proposals;
 
     event ProposalAdded(
         uint256 proposalId,

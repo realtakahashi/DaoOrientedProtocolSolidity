@@ -25,8 +25,8 @@ contract ApplicationCore is
         address contractAddress;
     }
 
-    uint256 public _nextApplicationId;
-    mapping(uint256 => Application) public _applications;
+    uint256 private _nextApplicationId;
+    mapping(uint256 => Application) private _applications;
     address private _memberManager;
     address private _proposalManager;
     address private _voteManager;
@@ -188,13 +188,39 @@ contract ApplicationCore is
 
     function isInstalledApplication(
         address applicationAdress
-    ) public view returns (bool) {
+    ) external view returns (bool) {
+        if (applicationAdress == address(this)){
+            return true;
+        }
+        
         for (uint256 i = 0; i < _nextApplicationId; i++) {
             if (_applications[i].contractAddress == applicationAdress) {
                 return true;
             }
         }
         return false;
+    }
+
+    function getApplicationList() external view returns(Application[] memory){
+        Application[] memory application = new Application[](getApplicationCount());
+        uint256 count = 0;
+        for (uint256 i=0; i<_nextApplicationId; i++){
+            if (_applications[i].contractAddress != address(0)){
+                application[count] = _applications[i];
+                count++;
+            }
+        }
+        return application;
+    }
+
+    function getApplicationCount() private view returns(uint256) {
+        uint256 count = 0;
+        for (uint256 i=0; i<_nextApplicationId; i++){
+            if (_applications[i].contractAddress != address(0)){
+                count++;
+            }
+        }
+        return count;
     }
 
     function checkApplicationInterface(

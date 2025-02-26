@@ -63,7 +63,7 @@ contract ApplicationCore is
         _addInterface("updateMemberManager");
         _addInterface("updateProposalManager");
         _addInterface("updateVoteManager");
-        _addInterface("deleteApplication");
+        _addInterface("unInstallApplication");
 
         _setProposalManager(proposalManager);
 
@@ -103,11 +103,12 @@ contract ApplicationCore is
             updateVoteManager(voteManager);
         } else if (
             keccak256(abi.encodePacked(interfaceName)) ==
-            keccak256(abi.encodePacked("deleteApplication"))
+            keccak256(abi.encodePacked("unInstallApplication"))
         ) {
             uint256 applictionId = abi.decode(data, (uint256));
             unInstallApplication(applictionId);
-        } else {
+        } 
+        else {
             revert("ApplicationCore: interface not found");
         }
     }
@@ -192,7 +193,7 @@ contract ApplicationCore is
         if (applicationAdress == address(this)){
             return true;
         }
-        
+
         for (uint256 i = 0; i < _nextApplicationId; i++) {
             if (_applications[i].contractAddress == applicationAdress) {
                 return true;

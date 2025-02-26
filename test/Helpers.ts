@@ -70,3 +70,16 @@ export async function deployExampleStorageFixture(proposalManager: string) {
 
   return { exampleStorage, owner, otherAccount, thirdAccount };
 }
+
+export async function deploySimpleStorageFixture() {
+  const [owner, otherAccount, thirdAccount] = await hre.ethers.getSigners();
+
+  const Storage = await hre.ethers.getContractFactory(
+    "Storage"
+  );
+  const storage = await Storage.deploy(
+    {}
+  );
+
+  return { storage, owner, otherAccount, thirdAccount };
+}

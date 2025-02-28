@@ -38,8 +38,9 @@ abstract contract ApplicationBase is IApplication, ERC165 {
     function supportsInterface(
         bytes4 interfaceId
     ) public view virtual override returns (bool) {
-        return
-            interfaceId == type(IApplication).interfaceId ||
-            super.supportsInterface(interfaceId);
+        return interfaceId == type(IApplication).interfaceId;
+
+        // interfaceId == type(IApplication).interfaceId ||
+        // super.supportsInterface(interfaceId);
     }
 }

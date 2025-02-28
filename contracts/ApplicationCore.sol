@@ -123,7 +123,7 @@ contract ApplicationCore is
         );
         _applications[_nextApplicationId] = Application(
             _nextApplicationId,
-            true,
+            false,
             name,
             contractAddress
         );
@@ -140,6 +140,7 @@ contract ApplicationCore is
                 _memberManager = memberManager;
                 _applications[i].contractAddress = memberManager;
                 _applications[i].isPreinstalled = false;
+                return;
             }
         }
         revert("Unexpeted error is occurred.");
@@ -155,6 +156,7 @@ contract ApplicationCore is
                 _proposalManager = proposalManager;
                 _applications[i].contractAddress = proposalManager;
                 _applications[i].isPreinstalled = false;
+                return;
             }
         }
         revert("Unexpeted error is occurred.");
@@ -170,6 +172,7 @@ contract ApplicationCore is
                 _voteManager = voteManager;
                 _applications[i].contractAddress = voteManager;
                 _applications[i].isPreinstalled = false;
+                return;
             }
         }
         revert("Unexpeted error is occurred.");

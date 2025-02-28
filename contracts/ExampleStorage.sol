@@ -25,6 +25,9 @@ contract ExampleStorage is ApplicationBase, OwnableProposalManager {
             uint256 num = abi.decode(data, (uint256));
             store(num);
         }
+        else{
+            revert("ExampleStorage: The interface is not found");
+        }
     }
 
     /**

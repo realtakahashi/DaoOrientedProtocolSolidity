@@ -22,11 +22,10 @@ contract MemberManager is
     event ElectionCommissionerChanged(uint256 memberId);
 
     constructor(
-        string memory nameOfFirstMember,
-        address eoaAddressOfFirstMember
+        string memory nameOfFirstMember
     ) Ownable(msg.sender) {
         _nextMemberId = 0;
-        _addMemeber(nameOfFirstMember, eoaAddressOfFirstMember, true);
+        _addMemeber(nameOfFirstMember, msg.sender, true);
         _setVersion("1.0.0");
         _addInterface("addMember");
         _addInterface("deleteMember");

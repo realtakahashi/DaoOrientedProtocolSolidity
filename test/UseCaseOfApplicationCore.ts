@@ -300,9 +300,8 @@ describe("ApplicationCore", function () {
 
       // Update Member Manager
       const MemberManager = await ethers.getContractFactory("MemberManager");
-      const updateMemberManager = await MemberManager.deploy(
+      const updateMemberManager = await MemberManager.connect(otherAccount).deploy(
         "Shin2",
-        otherAccount.address,
         {}
       );
 

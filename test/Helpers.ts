@@ -4,7 +4,7 @@ export async function deployMemberManagerFixture() {
   const [owner, otherAccount, thirdAccount] = await hre.ethers.getSigners();
 
   const MemberManager = await hre.ethers.getContractFactory("MemberManager");
-  const memberManager = await MemberManager.deploy("Shin", owner.address, {});
+  const memberManager = await MemberManager.deploy("Shin", {});
 
   return { memberManager, owner, otherAccount, thirdAccount };
 }
